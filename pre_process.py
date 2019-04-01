@@ -69,6 +69,8 @@ def get_feature_value(filename, out_filename):
                     outfile.write(" " + count + ":" + str(feature_count[count]))
                 outfile.write("\n")
 
+get_feature_value("testing.txt", "mega-test.txt")
+
 
 get_feature_value("mega-pos.txt", "mega-doc2.txt")
 get_feature_value("mega-neg.txt", "mega-doc2.txt")

@@ -63,38 +63,39 @@ vocab_list = ["fun", "couple", "love", "fast", "furious", "shoot", "fly"]
 # print(len(vocab_list))
 test_file = open("test.txt", 'r')
 c_nb = 0
-p_comedy = 0.0
-p_action = 0.0
+p_comedy = 1.0
+p_action = 1.0
 
 
 def nb_classifier(label_prob, label_dict, line_var, label_total_count, vocab_var, label_prior):
-    if line_var[0] in label_dict:
-        label_prob += (label_dict[line_var[0]] + 1) / (label_total_count + len(vocab_var))
-        # print("label_prob: " + str(label_prob))
-    else:
-        label_prob += (0 + 1) / (label_total_count + len(vocab_var))
-    for i in range(1, len(line_var), 1):
-        if line_var[i] in label_dict:
-            label_prob *= (label_dict[line_var[i]] + 1) / (label_total_count + len(vocab_var))
-            # print("label_prob: " + str(label_prob))
+    for word in line_var:
+        if word in label_dict:
+            # to account for multiple instances of the word in the dict by (num ** exp)
+            exp_mult = ((label_dict[word] + 1) / (label_total_count + len(vocab_var))) ** (line_var[word])
+            label_prob *= exp_mult
         else:
             label_prob *= (0 + 1) / (label_total_count + len(vocab_var))
-            # print("no label_prob: " + str(label_prob))
     c_nb = label_prob * label_prior
     return c_nb
 
 
 for line in test_file:
+    line = re.sub(r':+(\d)', r' \1', line)
     line_split = line.split()
-    comedy_nb = nb_classifier(p_comedy, comedy_dict, line_split, comedy_total_count, vocab_list, prior_comedy)
-    action_nb = nb_classifier(p_action, action_dict, line_split, action_total_count, vocab_list, prior_action)
+    line_dict = {}
+    for i in range(0, len(line_split), 2):
+        key = line_split[i]
+        value = line_split[i + 1]
+        line_dict[key] = int(value)
+    comedy_nb = nb_classifier(p_comedy, comedy_dict, line_dict, comedy_total_count, vocab_list, prior_comedy)
+    action_nb = nb_classifier(p_action, action_dict, line_dict, action_total_count, vocab_list, prior_action)
     print("Answer to Question 2(c):")
     print("The probability for class \'comedy\' is " + str(comedy_nb))
     print("The probability for class \'action\' is " + str(action_nb))
-    if (comedy_nb > action_nb):
-        print("The most likely class for \"" + line + "\" is \'comedy\'")
+    if comedy_nb > action_nb:
+        print("The most likely class for the small movie review is \'comedy\'\n")
     else:
-        print("The most likely class for \"" + line + "\" is \'action\'")
+        print("The most likely class for the small movie review is \'action\'\n")
 
 test_file.close()
 
@@ -129,3 +130,30 @@ for line in training_file:
                 neg_dict[key] += int(value)
             else:
                 neg_dict[key] = int(value)
+
+
+total = pos + neg
+prior_pos = pos / total
+prior_neg = neg / total
+test_file = open("mega-test.txt", 'r')
+c_nb = 0
+p_pos = 1.0
+p_neg = 1.0
+for line in test_file:
+    line = re.sub(r':+(\d)', r' \1', line)
+    line_split = line.split()
+    line_dict = {}
+    for i in range(1, len(line_split), 2):
+        key = line_split[i]
+        value = line_split[i + 1]
+        line_dict[key] = int(value)
+    pos_nb = nb_classifier(p_pos, pos_dict, line_dict, pos_total_count, pp.vocab_vector, prior_pos)
+    neg_nb = nb_classifier(p_neg, neg_dict, line_dict, neg_total_count, pp.vocab_vector, prior_neg)
+    print("Answer to Question 2(d):")
+    print("The probability for class \'pos\' is " + str(pos_nb))
+    print("The probability for class \'neg\' is " + str(neg_nb))
+    if pos_nb > neg_nb:
+        print("The most likely class for this sentence is \'pos\'")
+    else:
+        print("The most likely class for this sentence is \'neg\'")
+test_file.close()
